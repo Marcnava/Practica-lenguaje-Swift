@@ -1,6 +1,6 @@
 import Foundation
 
-struct Client {
+struct Client: Equatable {
     
     let name: String
     let age: UInt
@@ -12,7 +12,7 @@ struct Reservation {
     
     var id: UInt = 1
     var nameHotel: String = "Fabulous Hotel"
-    var clientList: [String] = []
+    var clientList: [Client] = []
     var days: UInt = 0
     var price: Float = 0
     var breakfast: Bool = false
@@ -33,15 +33,15 @@ enum ReservationError: Error {
 
 class HotelReservationManager {
     
-    var reservationList: [Reservation]
-    var reservation: Reservation
+    var reservationList: [Reservation] = []
+    var reservation: Reservation? = nil
     
-    init(reservationList: [Reservation]) {
+    init(reservationList: [Reservation], reservation: Reservation) {
         self.reservationList = reservationList
         self.reservation = Reservation()
     }
     
-    func addReservation(_ clientList: [String],_ days: UInt,_ breakfast: Bool) {
+    func addReservation(_ clientList: [Client],_ days: UInt,_ breakfast: Bool) {
         
         var price: Float
         var breakfastMultiplier: Float = 1
@@ -51,14 +51,14 @@ class HotelReservationManager {
         }
         
         price = Float(clientList.count) * Float(20) * Float(days) * breakfastMultiplier
-        reservation.breakfast = breakfast
-        reservation.clientList = clientList
-        reservation.days = days
-        reservation.price = price
+        reservation?.breakfast = breakfast
+        reservation?.clientList = clientList
+        reservation?.days = days
+        reservation?.price = price
         
-        reservationList.append(reservation)
+        reservationList.append((reservation)!)
         
-        reservation.idSum()
+        reservation?.idSum()
         
     }
     
@@ -88,6 +88,13 @@ class HotelReservationManager {
 
 
 func testAddReservation() {
+    
+    var reservation = Reservation()
+    let goku = Client(name: "Goku", age: 41, height: 1.9)
+    let krilin = Client(name: "Krilin", age: 36, height: 1.6)
+    HotelReservationManager(reservationList: [], reservation: reservation).addReservation([goku, krilin], 2, true)
+    
+    assert HotelReservationManager().reservationList.count == 1
     
 }
 

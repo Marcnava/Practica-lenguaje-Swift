@@ -10,12 +10,16 @@ struct Client {
 
 struct Reservation {
     
-    let id: UInt = 1
-    let nameHotel: String = "Fabulous Hotel"
-    let clientList: [String]
-    let days: UInt
-    let price: Decimal
-    let breakfast: Bool
+    var id: UInt = 1
+    var nameHotel: String = "Fabulous Hotel"
+    var clientList: [String] = []
+    var days: UInt = 0
+    var price: Float = 0
+    var breakfast: Bool = false
+    
+    mutating func idSum() {
+        self.id += 1
+    }
     
 }
 
@@ -30,16 +34,44 @@ enum ReservationError: Error {
 class HotelReservationManager {
     
     var reservationList: [Reservation]
+    var reservation: Reservation
     
     init(reservationList: [Reservation]) {
         self.reservationList = reservationList
+        self.reservation = Reservation()
     }
     
     func addReservation(_ clientList: [String],_ days: UInt,_ breakfast: Bool) {
         
+        var price: Float
+        var breakfastMultiplier: Float = 1
+        
+        if(breakfast) {
+            breakfastMultiplier = 1.25
+        }
+        
+        price = Float(clientList.count) * Float(20) * Float(days) * breakfastMultiplier
+        reservation.breakfast = breakfast
+        reservation.clientList = clientList
+        reservation.days = days
+        reservation.price = price
+        
+        reservationList.append(reservation)
+        
+        reservation.idSum()
+        
     }
     
     func removeReservation(_ id: UInt) {
+        
+        var count: Int = 0
+        for reserv in reservationList {
+            if(reserv.id == id) {
+                reservationList.remove(at: count)
+                break
+            }
+            count += 1
+        }
         
     }
     
@@ -66,3 +98,4 @@ func testCancelReservation() {
 func testReservationPrice() {
     
 }
+

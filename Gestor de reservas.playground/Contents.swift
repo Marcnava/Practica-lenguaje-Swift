@@ -121,8 +121,6 @@ class HotelReservationManager {
                 }
             }
         }
-        
-        
     }
     
     func validateReservationId(_ reservationId: UInt) throws {
@@ -146,7 +144,7 @@ class HotelReservationManager {
         print("Reservation ID: \(reservation.id)")
         print("Number of clients: \(reservation.clientList.count)")
         for client in reservation.clientList {
-            print("- Name: \(client.name)\t Age: \(client.age)\t Height: \(client.height)")
+            print("- Name: \(client.name)\t Age: \(client.age)\t Height: \(client.height)m")
         }
         print("Number of days: \(reservation.days)")
         if(reservation.breakfast == true) {

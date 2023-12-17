@@ -34,16 +34,16 @@ class HotelReservationManager {
     private var reservation: Reservation = Reservation()
     
     // Método para añadir reservas, validando antes que no hayan coincidencias con nombres de clientes ya reservados o reservas con mismo ID
-    func addReservation(_ clientList: [Client],_ days: UInt,_ breakfast: Bool) {
+    func addReservation(clients clientList: [Client],days: UInt,breakfast: Bool) {
         var price: Float
         var basePrice: Int = 20
         var breakfastMultiplier: Float = 1
         
         // Control de errores
         do {
-            try validateIdMatch(reservation.id)
+            try validateIdMatch(id: reservation.id)
             do {
-                try validateName(clientList)
+                try validateName(clients: clientList)
                 if(breakfast) {
                     breakfastMultiplier = 1.25
                 }
@@ -58,7 +58,8 @@ class HotelReservationManager {
                 reservation.price = price
                 
                 reservationList.append((reservation))
-                print(reservation)
+                print("Reservation added correctly\n---------------------------")
+                prettyShow(reservation)
                 
                 reservation.idSum()
             } catch {
@@ -70,7 +71,7 @@ class HotelReservationManager {
     }
     
     // Método para eliminar reservas de la lista
-    func removeReservation(_ id: UInt) {
+    func removeReservation(id: UInt) {
         // Control de errores
         do {
             try validateReservationId(id)
@@ -89,7 +90,10 @@ class HotelReservationManager {
     // MARK: Propiedad computada para mostrar por pantalla las reservas hechas, si no hay, se informa de ello
     var showReservationList: [Reservation] {
         if(reservationList.count > 0) {
-            print(reservationList)
+            print("Showing current reservations\n----------------------------")
+            for reservation in reservationList {
+                prettyShow(reservation)
+            }
             return reservationList
         } else {
             print("No hay reservas.")
@@ -98,7 +102,8 @@ class HotelReservationManager {
     }
 
     // MARK: Métodos para control de errores
-    private func validateIdMatch(_ id: UInt) throws {
+    // No se hacen privados para poder tener acceso en los tests
+    func validateIdMatch(id: UInt) throws {
         for reservation in reservationList {
             if id == reservation.id {
                 throw ReservationError.idMatch
@@ -106,7 +111,7 @@ class HotelReservationManager {
         }
     }
 
-    private func validateName(_ clientList: [Client]) throws {
+    func validateName(clients clientList: [Client]) throws {
         for client in clientList {
             for reservation in reservationList {
                 for clientHosted in reservation.clientList {
@@ -116,9 +121,11 @@ class HotelReservationManager {
                 }
             }
         }
+        
+        
     }
     
-    private func validateReservationId(_ reservationId: UInt) throws {
+    func validateReservationId(_ reservationId: UInt) throws {
         var reservationListPosition: Int = 0
         var match: Bool = false
         
@@ -133,37 +140,97 @@ class HotelReservationManager {
             throw ReservationError.noReservation
         }
     }
-}
-
-let manager: HotelReservationManager = HotelReservationManager()
-let goku: Client = Client(name: "Goku", age: 42, height: 1.9)
-let krilin: Client = Client(name: "Krilin", age: 36, height: 1.5)
-let vegeta: Client = Client(name: "Vegeta", age: 39, height: 1.7)
-let bulma: Client = Client(name: "Bulma", age: 32, height: 1.6)
-
-manager.addReservation([goku, krilin], 2, true)
-manager.addReservation([vegeta, bulma], 1, false)
-
-manager.removeReservation(1)
-
-manager.addReservation([goku, krilin], 2, true)
-
-manager.showReservationList
-
-manager.removeReservation(2)
-manager.removeReservation(3)
-
-manager.showReservationList
-
-func testAddReservation() {
-
-}
-
-func testCancelReservation() {
     
+    func prettyShow(_ reservation: Reservation) {
+        print("Hotel name: \(reservation.nameHotel)")
+        print("Reservation ID: \(reservation.id)")
+        print("Number of clients: \(reservation.clientList.count)")
+        for client in reservation.clientList {
+            print("- Name: \(client.name)\t Age: \(client.age)\t Height: \(client.height)")
+        }
+        print("Number of days: \(reservation.days)")
+        if(reservation.breakfast == true) {
+            print("Breakfast: Yes")
+        } else {
+            print("Breakfast: No")
+        }
+        print("Price: \(reservation.price)")
+        print()
+    }
 }
 
-func testReservationPrice() {
+// MARK: Declaración de clase con la batería de tests
+class ValidateTests {
+    // Se crean los objetos que se usarán en los tests
+    private let goku: Client = Client(name: "Goku", age: 42, height: 1.9)
+    private let krilin: Client = Client(name: "Krilin", age: 36, height: 1.5)
+    private let vegeta: Client = Client(name: "Vegeta", age: 39, height: 1.7)
+    private let bulma: Client = Client(name: "Bulma", age: 32, height: 1.6)
     
+    func testAddReservation() {
+        // Se testea si salta error en una reserva con un ID ya existente
+        
+        do {
+            let manager: HotelReservationManager = HotelReservationManager()
+            manager.addReservation(clients: [goku, krilin], days: 2, breakfast: true)
+            try manager.validateIdMatch(id: 1)
+            assertionFailure("Fallo en la validación de IDs")
+        } catch {
+            let validationError = error as? ReservationError
+            assert(validationError != nil)
+            assert(validationError == ReservationError.idMatch)
+        }
+        
+        // Se testea si salta error en una reserva con un nombre ya existente
+        do {
+            let manager: HotelReservationManager = HotelReservationManager()
+            manager.addReservation(clients: [goku, krilin], days: 2, breakfast: false)
+            try manager.validateName(clients: [vegeta, bulma, krilin])
+            assertionFailure("Fallo en la validación de nombres")
+        } catch {
+            let validationError = error as? ReservationError
+            assert(validationError != nil)
+            assert(validationError == ReservationError.clientMatch)
+        }
+    }
+    
+    func testCancelReservation() {
+        let manager: HotelReservationManager = HotelReservationManager()
+        manager.addReservation(clients: [goku, krilin], days: 2, breakfast: true)
+        manager.addReservation(clients: [vegeta, bulma], days: 1, breakfast: false)
+        // Se testea que al eliminar una reserva ésta se borra correctamente de la lista
+        manager.removeReservation(id: 1)
+        let reservationList: [Reservation] = manager.showReservationList
+        assert(reservationList.count == 1)
+        assert(reservationList[0].id == 2)
+        // Se testea que salta un error al intentar borrar una reserva con un ID inexistente
+        do {
+            try manager.validateReservationId(3)
+            assertionFailure("Fallo en borrado de reservas con ID inexistente")
+        } catch {
+            let validationError = error as? ReservationError
+            assert(validationError != nil)
+            assert(validationError == ReservationError.noReservation)
+        }
+    }
+    
+    func testReservationPrice() {
+        let manager: HotelReservationManager = HotelReservationManager()
+        manager.addReservation(clients: [goku, krilin], days: 2, breakfast: true)
+        manager.addReservation(clients: [vegeta, bulma], days: 2, breakfast: true)
+        // Se testea el cálculo correcto de los precios
+        var reservationList: [Reservation] = manager.showReservationList
+        assert(reservationList[0].price == reservationList[1].price)
+        manager.removeReservation(id: 1)
+        manager.removeReservation(id: 2)
+        manager.addReservation(clients: [goku, krilin], days: 1, breakfast: false)
+        manager.addReservation(clients: [vegeta, bulma], days: 1, breakfast: false)
+        reservationList = manager.showReservationList
+        assert(reservationList[0].price == reservationList[1].price)
+    }
 }
 
+let tests = ValidateTests()
+tests.testAddReservation()
+tests.testCancelReservation()
+tests.testReservationPrice()
